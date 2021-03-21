@@ -1,13 +1,14 @@
 import {fromEvent, merge, Observable, zip} from "rxjs";
 import {map, pluck} from "rxjs/operators";
 
+function getTouchEvent(event: TouchEvent | MouseEvent) {
+    return event instanceof TouchEvent ? event.changedTouches[0] : event;
+}
+
 function getX(source1$: Observable<TouchEvent>, source2$: Observable<MouseEvent>) {
     return merge(source1$, source2$).pipe(
-        map((event: TouchEvent | MouseEvent)  => {
-            return event instanceof TouchEvent
-                ? event.changedTouches[0].clientX
-                : event.clientX
-        })
+        map(getTouchEvent),
+        pluck('clientX')
     )
 }
 
