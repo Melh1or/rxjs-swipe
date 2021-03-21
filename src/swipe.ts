@@ -1,9 +1,13 @@
-import {fromEvent, Observable, zip} from "rxjs";
+import {fromEvent, merge, Observable, zip} from "rxjs";
 import {map, pluck} from "rxjs/operators";
 
-function getX(source$: Observable<TouchEvent>) {
-    return source$.pipe(
-        pluck('changedTouches', '0', 'pageX')
+function getX(source1$: Observable<TouchEvent>, source2$: Observable<MouseEvent>) {
+    return merge(source1$, source2$).pipe(
+        map((event: TouchEvent | MouseEvent)  => {
+            return event instanceof TouchEvent
+                ? event.changedTouches[0].clientX
+                : event.clientX
+        })
     )
 }
 
@@ -18,8 +22,14 @@ function directionHandler(direction: number) {
 }
 
 swipe(zip<[number, number]>(
-    getX(fromEvent<TouchEvent>(document, 'touchstart')),
-    getX(fromEvent<TouchEvent>(document, 'touchend'))
+    getX(
+        fromEvent<TouchEvent>(document, 'touchstart'),
+        fromEvent<MouseEvent>(document, 'mousedown'),
+    ),
+    getX(
+        fromEvent<TouchEvent>(document, 'touchend'),
+        fromEvent<MouseEvent>(document, 'mouseup'),
+    )
 )).subscribe({
     next: directionHandler
 });
